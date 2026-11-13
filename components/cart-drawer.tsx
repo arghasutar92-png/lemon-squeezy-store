@@ -1,18 +1,49 @@
 "use client";
 
 import { ArrowRight, Minus, Plus, ShoppingBag, X } from "lucide-react";
+import { useState } from "react";
 import { useCart } from "@/components/cart-context";
-import { formatPrice, isDemoCheckout, siteConfig } from "@/config/site";
+import { formatPrice } from "@/config/site";
 
 export function CartDrawer() {
   const { items, isOpen, removeItem, setCartOpen, updateQuantity } = useCart();
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const total = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
-  const checkoutHref = isDemoCheckout()
-    ? `/success?order=demo-${Date.now()}&product=${encodeURIComponent(items.map((item) => item.title).join(", "))}`
-    : siteConfig.lemonSqueezy.checkoutUrl;
+
+  const handleCheckout = async () => {
+    if (isCheckingOut || items.length === 0) return;
+
+    setIsCheckingOut(true);
+    setCheckoutError(null);
+
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map(({ id, quantity }) => ({ id, quantity })),
+        }),
+      });
+      const data = (await response.json()) as { url?: string; error?: string };
+
+      if (!response.ok || !data.url) {
+        throw new Error(data.error ?? "We couldn't start checkout. Please try again.");
+      }
+
+      window.location.assign(data.url);
+    } catch (error) {
+      setCheckoutError(
+        error instanceof Error
+          ? error.message
+          : "We couldn't start checkout. Please try again.",
+      );
+      setIsCheckingOut(false);
+    }
+  };
 
   return (
     <>
@@ -101,9 +132,20 @@ export function CartDrawer() {
               <span className="font-display">{formatPrice(total)}</span>
             </div>
             <p className="mt-2 text-xs text-ink/45">Instant digital delivery. Taxes calculated at checkout.</p>
-            <a href={checkoutHref} target={isDemoCheckout() ? undefined : "_blank"} rel={isDemoCheckout() ? undefined : "noreferrer"} className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-ink px-5 py-4 font-medium text-cream transition-transform hover:-translate-y-0.5">
-              Checkout <ArrowRight size={17} />
-            </a>
+            {checkoutError && (
+              <p role="alert" className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+                {checkoutError}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={handleCheckout}
+              disabled={isCheckingOut}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-ink px-5 py-4 font-medium text-cream transition-all hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60"
+            >
+              {isCheckingOut ? "Opening secure checkout..." : "Checkout"}
+              {!isCheckingOut && <ArrowRight size={17} />}
+            </button>
           </div>
         )}
       </aside>
