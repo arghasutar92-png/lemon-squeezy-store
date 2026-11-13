@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #f8f6f0;
+  color: #20231f;
+  font-family: var(--font-geist), sans-serif;
+}
+
+@layer components {
+  .display-heading {
+    font-family: var(--font-space-grotesk), sans-serif;
+    font-weight: 500;
+    letter-spacing: -0.055em;
+    line-height: 0.98;
+  }
+
+  .eyebrow {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .arrow-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 0.35rem;
+    transition: opacity 180ms ease;
+  }
+
+  .arrow-link:hover {
+    opacity: 0.6;
+  }
+}
